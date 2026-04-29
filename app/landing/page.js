@@ -4,7 +4,7 @@ import { useState } from 'react';
 
 const faqs = [
   { q: 'How does Denial Fighter work?', a: 'You paste your Medicare Advantage denial notice and chart notes into the app. Our AI analyzes the denial reason against CMS guidelines and payer policies, identifies evidence gaps, then generates a tailored appeal letter with specific regulations and arguments most likely to overturn the denial.' },
-  { q: 'Is my patient data secure?', a: 'Yes. All data is encrypted in transit (TLS) and at rest. We are HIPAA-compliant and never use your data for training. Appeals can be deleted at any time.' },
+  { q: 'Is my patient data secure?', a: 'Denial Fighter is in beta. Use fake or de-identified text for now; production PHI support depends on the PHI scrubber, user access controls, retention policies, and the right vendor agreements.' },
   { q: 'What types of denials do you support?', a: 'All Medicare Advantage denial types: lack of medical necessity, not a covered benefit, experimental/investigational, out-of-network, prior authorization issues, and coding/billing errors.' },
   { q: 'Can I customize the appeal letters?', a: 'Absolutely. Every generated letter is editable before you download or print. You can adjust tone, add letterhead, and insert specific clinical details.' },
   { q: 'Do you integrate with my EHR?', a: 'Not yet — coming soon for Clinic-tier. For now, paste denial text directly or upload a screenshot.' },

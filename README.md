@@ -62,6 +62,10 @@ DEEPSEEK_API_KEY=sk-your-key-here
 NEXT_PUBLIC_SUPABASE_URL=your-supabase-url
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+
+# Optional production demo flags
+SAVE_GENERATED_APPEALS=false
+ALLOW_PUBLIC_APPEAL_HISTORY=false
 ```
 
 ## Project Structure

@@ -1,7 +1,25 @@
 import { supabase } from '@/lib/supabase';
 import { NextResponse } from 'next/server';
 
+const isProduction = process.env.NODE_ENV === 'production';
+const allowPublicAppealHistory = process.env.ALLOW_PUBLIC_APPEAL_HISTORY === 'true';
+
+function requireAppealHistoryAccess() {
+  if (!isProduction || allowPublicAppealHistory) return null;
+
+  return NextResponse.json(
+    {
+      success: false,
+      error: 'Appeal history is disabled in production until authentication is enabled.',
+    },
+    { status: 403 }
+  );
+}
+
 export async function GET(request) {
+  const accessError = requireAppealHistoryAccess();
+  if (accessError) return accessError;
+
   const { searchParams } = new URL(request.url);
   const id = searchParams.get('id');
   const limit = parseInt(searchParams.get('limit') || '20');
@@ -39,6 +57,9 @@ export async function GET(request) {
 }
 
 export async function PATCH(request) {
+  const accessError = requireAppealHistoryAccess();
+  if (accessError) return accessError;
+
   try {
     const { id, status, feedbackScore } = await request.json();
     

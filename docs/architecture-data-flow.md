@@ -47,7 +47,7 @@ Current routing decision: keep `/tool`, `/tool/results`, and `/tool/history` as 
    - `evidenceCovered`
    - `evidenceGaps`
    - `appealLetter`
-7. `/api/generate` inserts the generated appeal into Supabase table `denial_appeals`.
+7. `/api/generate` inserts the generated appeal into Supabase table `denial_appeals` only when persistence is enabled.
 8. `/api/generate` returns predictable product data to the browser:
    - `success`
    - `appeal`
@@ -64,13 +64,13 @@ Current routing decision: keep `/tool`, `/tool/results`, and `/tool/history` as 
 `lib/supabase.js` creates one Supabase client using:
 
 - `NEXT_PUBLIC_SUPABASE_URL`
-- `SUPABASE_SERVICE_ROLE_KEY`, falling back to `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY`
 
 Current app table usage:
 
 - `denial_appeals` stores generated appeals.
-- `/api/generate` inserts records.
-- `/api/appeals` lists records, reads one record by `id`, and patches status/feedback.
+- `/api/generate` inserts records in local development by default. In production, set `SAVE_GENERATED_APPEALS=true` only when storage is intentional.
+- `/api/appeals` lists records, reads one record by `id`, and patches status/feedback only outside production by default. In production, set `ALLOW_PUBLIC_APPEAL_HISTORY=true` only for a fake-data demo.
 
 Progress tracker usage is separate from app appeal storage. The May project progress tracker uses:
 
@@ -85,17 +85,16 @@ These are expected Sprint 0 findings, not failures. They are the exact reasons W
 
 - Raw denial text and chart notes can be pasted into the browser.
 - `/api/generate` currently sends raw denial text and chart notes to the AI provider.
-- `/api/generate` currently stores raw `denial_text` and `chart_notes` in Supabase.
+- `/api/generate` stores raw `denial_text` and `chart_notes` only when appeal persistence is enabled.
 - The app does not yet have a deterministic PHI scrubber or review step.
-- `app/tool/page.js` says "HIPAA Compliant. Data is encrypted and never used for training." This should be softened before any real-user testing unless the required compliance posture is actually in place.
-- `app/landing/page.js` also claims HIPAA compliance in FAQ copy. This should become a plain-English beta privacy note until BAAs, access controls, audit logs, retention policies, and provider requirements are real.
+- `app/tool/page.js` and `app/landing/page.js` now use beta privacy language instead of claiming HIPAA compliance.
 - Upload UI is currently mock behavior and does not extract document text.
 
 ## Next Implementation Steps
 
 1. Use fake fixture cases for development and demos.
 2. Keep `/tool` as the primary workflow and avoid improving legacy `/history` or `/results` unless they are being removed or redirected.
-3. Add a visible beta warning before Week 1 testing: do not paste real PHI.
+3. Run `docs/001_lock_down_denial_appeals_rls.sql` in Supabase before public testing.
 4. Harden `/api/generate` responses so errors always return a consistent JSON shape.
 5. Build the deterministic PHI scrubber before storing or sending real clinical text.
 
