@@ -102,7 +102,7 @@ function LandingPage() {
                 )}
               </button>
               <a
-                href="/tool"
+                href="/"
                 className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600"
               >
                 Launch App
@@ -131,7 +131,7 @@ function LandingPage() {
             </p>
             <div className="mt-8 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
               <a
-                href="/tool"
+                href="/"
                 className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-8 py-3.5 text-base font-semibold text-white shadow-lg shadow-blue-600/25 transition-all hover:bg-blue-700 hover:shadow-xl hover:shadow-blue-600/30 dark:bg-blue-500 dark:shadow-blue-500/25 dark:hover:bg-blue-600"
               >
                 Try Denial Fighter Free
