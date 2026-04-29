@@ -108,6 +108,8 @@ Use this side-hustle project ID, after verifying it exists in the productivity a
 e3ead243-c8d0-4cf3-95f5-baeaedca10e8
 ```
 
+For this project, use `progress_mode = 'checklist'`. The headline progress percentage should mean completed active steps divided by total active steps. Weekly milestones should group the work, but should not drive the headline percentage.
+
 ### Tables To Update
 
 Use `public.projects` for the parent project row.
@@ -172,6 +174,8 @@ Allowed `decision` values:
 
 ### Required Progress Update Habit
 
+Progress tracking is mandatory for meaningful project work. Do not treat it as optional housekeeping.
+
 When beginning a meaningful task:
 
 1. Find or create the relevant `project_steps` row.
@@ -186,6 +190,25 @@ When completing a meaningful task:
 3. Update the related milestone if the milestone is now complete.
 4. Add a `project_reviews` row for weekly summaries or major replans.
 5. Run the sync endpoint.
+
+When making partial progress but not finishing a step:
+
+1. Keep the relevant `project_steps.status = 'in_progress'`.
+2. Update `projects.next_action` to the next concrete action.
+3. Mention the incomplete work in the final response.
+
+When blocked:
+
+1. Keep or set the step to `in_progress` unless the work is intentionally abandoned.
+2. Add the blocker to `projects.next_action` or a `project_reviews.notes` entry.
+3. Tell the user exactly what is needed to unblock the task.
+
+If direct Supabase access is unavailable:
+
+1. Do not silently skip progress tracking.
+2. Tell the user the tracker could not be updated.
+3. Provide the exact milestone/step/status changes that should be applied.
+4. If useful, create an ordered SQL file in `docs/` for the user or another agent to run.
 
 Progress percentage is calculated by app logic, not a database trigger. After updating `project_steps` or `project_milestones`, run:
 
@@ -212,6 +235,114 @@ Relevant productivity-app files:
 
 If direct Supabase access is not available, prepare ordered SQL files in `docs/` or clearly list the rows/updates for the user to apply.
 
+## Daily Startup Protocol
+
+When the user asks any version of "what do we need to work on today?", "what is next?", "where did we leave off?", or "what should we do now?", do not answer from memory alone. Use this startup protocol.
+
+### 1. Check The Local Project State
+
+Run or inspect:
+
+- `git status --short --branch`
+- `MAY_BUILD_PLAN.md`
+- `AGENTS.md`
+- Recent changed files relevant to the active week
+- Available package scripts in `package.json`
+
+If the dev server is already running, do not restart it unless needed. If it is not running and the next task needs UI verification, start `npm run dev`.
+
+### 2. Check The Calendar Date Against The Plan
+
+Use the current date to identify the active May sprint:
+
+- April 29-May 3: Sprint 0, Foundation And Orientation
+- May 4-May 10: Week 1, Core Appeal Generator
+- May 11-May 17: Week 2, PHI Scrubber And Appeal History
+- May 18-May 24: Week 3, Auth, Accounts, And Monetization Path
+- May 25-May 31: Week 4, Pilot-Ready MVP
+
+If the current date is outside May 2026, still use `MAY_BUILD_PLAN.md` as the project roadmap, then infer the next unfinished milestone from Supabase progress and local repo state.
+
+### 3. Check Supabase Progress Tracker
+
+The tracker is the live source of truth. Look up the parent project:
+
+```txt
+e3ead243-c8d0-4cf3-95f5-baeaedca10e8
+```
+
+Check:
+
+- Current project status and `progress_percentage`
+- `next_milestone`
+- `next_milestone_date`
+- `next_action`
+- Open or `in_progress` rows in `project_milestones`
+- Open or `in_progress` rows in `project_steps`
+- Most recent `project_reviews` row
+
+If direct Supabase/tool access is unavailable, say that clearly and use `MAY_BUILD_PLAN.md` plus local git state as the fallback.
+
+### 4. Decide The Day's Work
+
+Pick a small, concrete set of work for today:
+
+- One primary outcome
+- Two or three supporting tasks
+- One learning objective
+- One verification step
+- One tracker update that should happen before or after the work
+
+Prefer unfinished tracker steps over inventing new work. Prefer the current week's milestone unless a previous milestone blocks it.
+
+### 5. Answer In This Format
+
+Use this structure when answering the daily startup question:
+
+```md
+Today we should focus on: [one-sentence outcome]
+
+Why this is next:
+- [date/week reason]
+- [tracker reason]
+- [repo/codebase reason]
+
+Today's working set:
+1. [task]
+2. [task]
+3. [task]
+
+Learning target:
+- [specific concept to learn today]
+
+Tracker update:
+- [what should be marked in progress/completed in Supabase]
+
+I can start by [first concrete action].
+```
+
+If the user asks to proceed, begin the first concrete action. Do not stay in planning mode unless the user explicitly asks to only plan.
+
+### 6. Update Progress As Work Happens
+
+Before starting meaningful implementation, mark or prepare the relevant `project_steps` row as `in_progress`. This applies when editing code, changing docs, updating Supabase schema/data, implementing features, running a planned verification pass, or completing a planned research/deliverable step.
+
+After completing meaningful implementation:
+
+- Mark completed steps as `completed`.
+- Set `completed_at`.
+- Update milestone status if appropriate.
+- Run `/api/projects/sync-progress` if available.
+- Confirm the new `progress_percentage`, `next_milestone`, and `next_action` if the tracker was updated.
+- Summarize what changed and what the next action should be.
+
+At the end of a work session, the final response should include a brief tracker note:
+
+- Which step was moved to `in_progress`
+- Which step was moved to `completed`
+- Whether sync ran
+- The next action now shown in the tracker
+
 ## Git And Change Safety
 
 - Do not commit, push, deploy, or force-push without explicit permission.
@@ -235,4 +366,3 @@ This project is intentionally a learning sprint. When making changes:
 - Prefer implementation steps that teach frontend, backend, database, and product judgment.
 - Capture confusing areas in the weekly review.
 - Keep the user near the edge of their comfort zone without turning the project into chaos.
-

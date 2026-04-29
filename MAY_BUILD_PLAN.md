@@ -70,7 +70,7 @@ Recommended project values:
 - `name`: `Denial Fighter May Build`
 - `status`: `in_progress`
 - `archived`: `false`
-- `progress_mode`: `mixed`
+- `progress_mode`: `checklist`
 - `progress_source`: `tracking`
 - `finish_line`: `Pilot-ready MVP for generating de-identified Medicare Advantage appeal letters by May 31, 2026.`
 - `why_now`: `Use May side-hustle sprint to learn full-stack AI product development and test monetization potential.`
@@ -98,6 +98,8 @@ Suggested milestones:
 | 50 | Week 4: Pilot-Ready MVP | 2026-05-31 | Deployed MVP with privacy page, export flow, demo script, and outreach list. |
 
 `public.project_steps` tracks checklist items that feed progress percentage.
+
+For this project, the headline progress percentage should come from active checklist steps, not the five weekly milestones. Milestones are phase groupings; steps are the actual progress units. For example, if 8 of 56 active steps are complete, the project should show 14% complete.
 
 Allowed `step_type` values:
 
@@ -414,6 +416,7 @@ Polish, deploy, and get real feedback from potential users.
 - Add edit mode for the generated appeal letter.
 - Add onboarding examples using fake data.
 - Polish mobile and desktop UI.
+- Evaluate whether the pilot workflow should stay web-first or add a Chrome extension/side-panel companion that can reduce window switching for users working inside payer portals or EHRs.
 
 ### Learning Objectives
 
@@ -454,6 +457,19 @@ Polish, deploy, and get real feedback from potential users.
 - Record a short product demo video.
 - Add Stripe live-mode readiness checklist.
 - Add customer intake form.
+- Write a Chrome extension feasibility note covering likely entry points, PHI risk, permissions, and whether the first extension should only open/import into the web app instead of reading page content directly.
+
+## Browser Extension / Embedded Workflow Track
+
+A Chrome extension could become a strong distribution and workflow advantage because clinicians and clinic operators may already be working inside an EHR, clearinghouse, payer portal, or inbox when they encounter a denial.
+
+Treat this as a post-core workflow path, not the first MVP surface. The web app should remain the source of truth until the de-identification flow, appeal generation, saved history, and privacy story are reliable. Then validate the extension concept with pilot users:
+
+- Would a side-panel or browser action reduce enough friction to matter?
+- Should the extension simply open Denial Fighter with copied text, or should it read selected page text?
+- What permissions would be required, and how can the app avoid broad page access?
+- How does de-identification happen before any selected portal/EHR text is sent to the AI API?
+- Does this need a HIPAA-ready tier and BAAs before it can be offered beyond fake/de-identified beta use?
 
 ## PHI And Compliance Track
 
