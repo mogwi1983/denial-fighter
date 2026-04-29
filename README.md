@@ -60,7 +60,8 @@ npm run build
 ```
 DEEPSEEK_API_KEY=sk-your-key-here
 NEXT_PUBLIC_SUPABASE_URL=your-supabase-url
-SUPABASE_SERVICE_KEY=your-service-role-key
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 ```
 
 ## Project Structure

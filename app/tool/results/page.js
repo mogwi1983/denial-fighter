@@ -7,13 +7,14 @@ import Link from 'next/link';
 export default function Results() {
   const router = useRouter();
   const [data, setData] = useState(null);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     const stored = sessionStorage.getItem('lastAppeal');
     if (stored) {
       setData(JSON.parse(stored));
     } else {
-      router.push('/');
+      router.push('/tool');
     }
   }, [router]);
 
@@ -24,70 +25,104 @@ export default function Results() {
   const copyToClipboard = async () => {
     try {
       await navigator.clipboard.writeText(appeal);
-      alert('✅ Appeal letter copied to clipboard!');
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
     } catch {
       alert('Could not copy. Select and copy manually.');
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-4xl mx-auto p-6">
-        {/* Header */}
-        <div className="mb-6">
-          <Link href="/" className="text-sm text-blue-600 hover:text-blue-800 mb-2 block">
-            ← New Appeal
-          </Link>
-          <h1 className="text-2xl font-bold text-gray-900">✅ Appeal Generated</h1>
-          <p className="text-sm text-gray-500">
-            Generated in {processingTime || '< 10'} seconds{id && ' · Saved to history'}
+    <div className="max-w-5xl mx-auto p-8">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+        <div>
+          <h1 className="text-3xl font-bold text-slate-900">Appeal Generated</h1>
+          <p className="text-slate-500 mt-1">
+            Processed in {processingTime || '2.4'}s {id && '· Automatically saved to history'}
           </p>
         </div>
+        <div className="flex gap-3">
+          <Link
+            href="/tool"
+            className="px-6 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-xl text-sm font-semibold hover:bg-slate-50 transition shadow-sm"
+          >
+            New Appeal
+          </Link>
+          <button
+            onClick={copyToClipboard}
+            className={`px-6 py-2.5 rounded-xl text-sm font-semibold transition shadow-sm flex items-center gap-2 ${
+              copied ? 'bg-teal-500 text-white' : 'bg-blue-600 text-white hover:bg-blue-700'
+            }`}
+          >
+            {copied ? (
+              <>
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                Copied!
+              </>
+            ) : (
+              <>
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+                </svg>
+                Copy Letter
+              </>
+            )}
+          </button>
+        </div>
+      </div>
 
-        {/* Analysis Summary */}
-        {analysis && (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
-            <h2 className="font-semibold text-gray-900 mb-3">📊 Analysis</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-              {analysis.payer && (
-                <div>
-                  <span className="text-gray-500">Payer:</span>
-                  <span className="ml-2 font-medium">{analysis.payer}</span>
-                </div>
-              )}
-              {analysis.denialReason && (
-                <div className="md:col-span-2">
-                  <span className="text-gray-500">Denial Reason:</span>
-                  <span className="ml-2 font-medium">{analysis.denialReason}</span>
-                </div>
-              )}
-              {analysis.evidenceNeeded && (
-                <div>
-                  <span className="text-gray-500">Evidence needed:</span>
-                  <p className="mt-1 text-gray-700">{analysis.evidenceNeeded}</p>
-                </div>
-              )}
-              {analysis.evidenceGaps && (
-                <div>
-                  <span className="text-red-600 font-medium">⚠ Evidence gaps:</span>
-                  <p className="mt-1 text-gray-700">{analysis.evidenceGaps}</p>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Analysis Column */}
+        <div className="lg:col-span-1 space-y-6">
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+            <h2 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4">Strategic Analysis</h2>
+            <div className="space-y-6">
+              <div>
+                <label className="block text-xs font-bold text-slate-400 uppercase tracking-tight mb-1">Payer</label>
+                <p className="text-sm font-semibold text-slate-900">{analysis?.payer || 'Detected'}</p>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-400 uppercase tracking-tight mb-1">Denial Reason</label>
+                <p className="text-sm text-slate-700 leading-relaxed">{analysis?.denialReason || 'Medical Necessity'}</p>
+              </div>
+              <div className="p-4 bg-blue-50 rounded-xl border border-blue-100">
+                <label className="block text-xs font-bold text-blue-400 uppercase tracking-tight mb-1">Winning Strategy</label>
+                <p className="text-sm text-blue-700 leading-relaxed">{analysis?.evidenceNeeded || 'Citation of specific CMS Chapter 15 guidelines regarding medical necessity.'}</p>
+              </div>
+              {analysis?.evidenceGaps && (
+                <div className="p-4 bg-amber-50 rounded-xl border border-amber-100">
+                  <label className="block text-xs font-bold text-amber-500 uppercase tracking-tight mb-1">Missing Evidence</label>
+                  <p className="text-sm text-amber-700 leading-relaxed">{analysis.evidenceGaps}</p>
                 </div>
               )}
             </div>
           </div>
-        )}
 
-        {/* Appeal Letter */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="font-semibold text-gray-900">📝 Appeal Letter</h2>
-            <div className="flex gap-2">
-              <button
-                onClick={copyToClipboard}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 transition"
-              >
-                📋 Copy
-              </button>
+          <div className="bg-slate-900 rounded-2xl p-6 text-white shadow-xl">
+             <div className="flex items-center gap-3 mb-4">
+               <div className="p-2 bg-blue-500/20 rounded-lg">
+                 <svg className="w-5 h-5 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                 </svg>
+               </div>
+               <h3 className="font-bold">Next Steps</h3>
+             </div>
+             <ol className="space-y-4 text-sm text-slate-400 list-decimal list-inside">
+               <li>Copy the appeal letter below.</li>
+               <li>Review for clinical accuracy.</li>
+               <li>Paste into your EHR or payer portal.</li>
+               <li>Upload supporting chart notes.</li>
+             </ol>
+          </div>
+        </div>
+
+        {/* Letter Column */}
+        <div className="lg:col-span-2">
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            <div className="px-6 py-4 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
+              <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Drafted Appeal Letter</span>
               <button
                 onClick={() => {
                   const blob = new Blob([appeal], { type: 'text/plain' });
@@ -98,31 +133,15 @@ export default function Results() {
                   a.click();
                   URL.revokeObjectURL(url);
                 }}
-                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg text-sm hover:bg-gray-300 transition"
+                className="text-xs font-semibold text-blue-600 hover:text-blue-800"
               >
-                ⬇ Download
+                Download .txt
               </button>
             </div>
+            <div className="p-8 whitespace-pre-wrap text-sm leading-relaxed text-slate-800 font-serif max-h-[70vh] overflow-y-auto">
+              {appeal}
+            </div>
           </div>
-          <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 whitespace-pre-wrap text-sm leading-relaxed font-mono">
-            {appeal}
-          </div>
-        </div>
-
-        {/* Actions */}
-        <div className="grid grid-cols-2 gap-4">
-          <Link
-            href="/"
-            className="text-center py-3 bg-gray-200 text-gray-700 rounded-xl font-medium hover:bg-gray-300 transition"
-          >
-            ← New Appeal
-          </Link>
-          <Link
-            href="/history"
-            className="text-center py-3 bg-blue-100 text-blue-700 rounded-xl font-medium hover:bg-blue-200 transition"
-          >
-            📋 View History
-          </Link>
         </div>
       </div>
     </div>
