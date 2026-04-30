@@ -8,30 +8,73 @@ const persistAppeals =
   (!isProduction && process.env.SAVE_GENERATED_APPEALS !== 'false');
 const maxInputCharacters = 20000;
 
+function errorResponse(error, status = 500, details = {}) {
+  return NextResponse.json(
+    {
+      success: false,
+      error,
+      ...details,
+    },
+    { status }
+  );
+}
+
+function normalizeText(value) {
+  return typeof value === 'string' ? value.trim() : '';
+}
+
+function normalizeList(value) {
+  if (Array.isArray(value)) {
+    return value.filter(Boolean).map(String);
+  }
+
+  if (typeof value === 'string' && value.trim()) {
+    return [value.trim()];
+  }
+
+  return null;
+}
+
 export async function POST(request) {
   const startTime = Date.now();
   
   try {
-    const { denialText, chartNotes, patientDiagnosis, patientAge, payerName } = await request.json();
+    let payload;
+
+    try {
+      payload = await request.json();
+    } catch {
+      return errorResponse('Request body must be valid JSON.', 400);
+    }
+
+    if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
+      payload = {};
+    }
+
+    const denialText = normalizeText(payload.denialText);
+    const chartNotes = normalizeText(payload.chartNotes);
+    const patientDiagnosis = normalizeText(payload.patientDiagnosis);
+    const payerName = normalizeText(payload.payerName);
+    const patientAge = normalizeText(payload.patientAge);
 
     if (!denialText || !chartNotes) {
-      return NextResponse.json(
-        { error: 'Both denial text and chart notes are required' },
-        { status: 400 }
-      );
+      return errorResponse('Both denial text and chart notes are required.', 400, {
+        fieldErrors: {
+          denialText: denialText ? undefined : 'Denial text is required.',
+          chartNotes: chartNotes ? undefined : 'Chart notes are required.',
+        },
+      });
     }
 
     if (denialText.length + chartNotes.length > maxInputCharacters) {
-      return NextResponse.json(
-        { error: 'Input is too long for this MVP endpoint' },
-        { status: 413 }
-      );
+      return errorResponse(`Input is too long for this MVP endpoint. Keep combined text under ${maxInputCharacters} characters.`, 413);
     }
 
-    // Step 1: AI analysis + appeal generation
-    const result = await analyzeWithChartNotes(denialText, chartNotes);
+    const result = await analyzeWithChartNotes(denialText, chartNotes, {
+      patientDiagnosis,
+      payerName,
+    });
 
-    // Step 2: Save to database
     let data = null;
 
     if (persistAppeals) {
@@ -45,8 +88,10 @@ export async function POST(request) {
           patient_diagnosis: patientDiagnosis,
           patient_age: patientAge,
           appeal_letter: result.appealLetter,
-          evidence_gaps: result.evidenceGaps ? [result.evidenceGaps] : null,
-          payer_specific_tips: result.evidenceNeeded,
+          evidence_gaps: normalizeList(result.evidenceGaps),
+          payer_specific_tips: Array.isArray(result.evidenceNeeded)
+            ? result.evidenceNeeded.join('\n')
+            : result.evidenceNeeded,
           processing_time_seconds: Math.floor((Date.now() - startTime) / 1000),
           model_used: result.model || 'deepseek-chat',
           status: 'appeal_generated',
@@ -65,11 +110,11 @@ export async function POST(request) {
       success: true,
       appeal: result.appealLetter,
       analysis: {
-        payer: result.payer,
-        denialReason: result.denialReason,
-        evidenceNeeded: result.evidenceNeeded,
-        evidenceCovered: result.evidenceCovered,
-        evidenceGaps: result.evidenceGaps,
+        payer: result.payer || payerName || 'Unknown payer',
+        denialReason: result.denialReason || 'Not specified',
+        evidenceNeeded: result.evidenceNeeded || [],
+        evidenceCovered: result.evidenceCovered || [],
+        evidenceGaps: result.evidenceGaps || [],
       },
       id: data?.id || null,
       saved: Boolean(data?.id),
@@ -78,9 +123,6 @@ export async function POST(request) {
 
   } catch (error) {
     console.error('Generate error:', error);
-    return NextResponse.json(
-      { error: 'Failed to generate appeal', details: error.message },
-      { status: 500 }
-    );
+    return errorResponse('Failed to generate appeal. Please try again with fake or de-identified text.', 500);
   }
 }
