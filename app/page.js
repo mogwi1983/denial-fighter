@@ -98,6 +98,10 @@ export default function Home() {
             </svg>
             History
           </button>
+          <button onClick={() => router.push('/summerschool')} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-600 hover:bg-amber-50 hover:text-amber-700">
+            <span className="text-lg leading-none">☀️</span>
+            Summer School
+          </button>
         </nav>
 
         <div className="p-4 mt-auto border-t border-slate-100">
@@ -109,7 +113,7 @@ export default function Home() {
               </div>
               <div className="overflow-hidden">
                 <p className="text-sm font-medium text-slate-900 truncate">Dr. Jane Doe</p>
-                <p className="text-xs text-slate-500 truncate">St. Mary's Hospital</p>
+                <p className="text-xs text-slate-500 truncate">St. Mary&apos;s Hospital</p>
               </div>
             </div>
           </div>
@@ -173,7 +177,7 @@ export default function Home() {
                         </div>
                         <h3 className="text-lg font-bold text-slate-900">Drop denial letter here</h3>
                         <p className="text-sm text-slate-500 mt-1 mb-6 max-w-xs">
-                          Support for PDF, JPG, PNG, or screenshots. We'll automatically extract the text.
+                          Support for PDF, JPG, PNG, or screenshots. We&apos;ll automatically extract the text.
                         </p>
                         <label className="cursor-pointer bg-white border border-slate-200 shadow-sm px-6 py-2.5 rounded-lg text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors">
                           Browse Files

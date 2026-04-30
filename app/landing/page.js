@@ -77,6 +77,9 @@ function LandingPage() {
               <a href="#features" className="hover:text-slate-900 dark:hover:text-white">Features</a>
               <a href="#pricing" className="hover:text-slate-900 dark:hover:text-white">Pricing</a>
               <a href="#faq" className="hover:text-slate-900 dark:hover:text-white">FAQ</a>
+              <a href="/summerschool" className="flex items-center gap-1.5 text-amber-600 hover:text-amber-700 dark:text-amber-400 font-semibold">
+                <span>☀️</span> Summer School
+              </a>
               <button
                 onClick={() => setDark(!dark)}
                 className="rounded-md p-2 hover:bg-slate-100 dark:hover:bg-slate-800"

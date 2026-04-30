@@ -1,0 +1,16 @@
+---
+description: Denial Fighter shared AI-agent instructions
+alwaysApply: true
+---
+
+Read `AGENTS.md` first. It is the canonical instruction file for Denial Fighter across Codex, Claude Code, Cursor, and Gemini CLI.
+
+Also use:
+
+- `MAY_BUILD_PLAN.md` for sprint scope and product direction.
+- `docs/agents/context-pack.md` for quick repo orientation.
+- `docs/architecture-data-flow.md` for current routes and data flow.
+- `docs/checklists/agent-change-checklist.md` before and after meaningful edits.
+
+Do not commit real PHI. Do not store or send raw PHI by default. Keep the Supabase progress tracker updated for meaningful work.
+

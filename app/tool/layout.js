@@ -68,7 +68,7 @@ export default function ToolLayout({ children }) {
               </div>
               <div className="overflow-hidden">
                 <p className="text-sm font-medium text-slate-900 truncate">Dr. Jane Doe</p>
-                <p className="text-xs text-slate-500 truncate">St. Mary's Hospital</p>
+                <p className="text-xs text-slate-500 truncate">St. Mary&apos;s Hospital</p>
               </div>
             </div>
           </div>

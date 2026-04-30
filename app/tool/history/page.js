@@ -68,7 +68,7 @@ export default function History() {
               </svg>
             </div>
             <h3 className="text-lg font-bold text-slate-900">No appeals found</h3>
-            <p className="text-slate-500 mt-1 mb-8">You haven't generated any appeal letters yet.</p>
+            <p className="text-slate-500 mt-1 mb-8">You haven&apos;t generated any appeal letters yet.</p>
             <Link href="/tool" className="text-blue-600 font-semibold hover:underline">
               Generate your first appeal →
             </Link>

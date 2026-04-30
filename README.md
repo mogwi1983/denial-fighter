@@ -1,65 +1,50 @@
-<br/>
-<p align="center">
-  <img src="app/favicon.ico" alt="Denial Fighter" width="60" height="60">
-</p>
+# Denial Fighter
 
-<h1 align="center">Denial Fighter ⚡</h1>
+AI-assisted Medicare Advantage appeal letters for small clinics and clinicians.
 
-<p align="center">
-  <strong>AI-powered Medicare Advantage appeal letters in 3 minutes</strong>
-</p>
+Denial Fighter is being built as a pilot-ready MVP and as a full-stack learning sprint. The app should become a practical workflow, not just a prompt box: enter fake or de-identified denial and chart text, scrub likely PHI, review what will be sent, generate a structured appeal, then edit, copy, export, save, and revisit the result.
 
-<p align="center">
-  Paste a denial notice + chart notes → get a complete appeal letter.<br/>
-  Built for PAs, NPs, and small clinic providers fighting vague MA denials.
-</p>
+## Current Status
 
-<p align="center">
-  <a href="https://denial.jamesrodriguez.dev">🚀 Live Demo</a>
-</p>
-
-## Why
-
-Medicare Advantage plans give vague "NO" denials with no specific appeal path — unlike traditional Medicare or commercial insurance. Existing denial management tools cost $50k+/yr and target enterprise health systems. Small clinics (1-10 providers) are left doing appeals manually.
-
-**Denial Fighter bridges that gap.**
-
-## How It Works
-
-1. **Paste** the denial notice + chart notes
-2. **AI analyzes** — identifies payer, denial reason, evidence gaps
-3. **Generate** — complete appeal letter with evidence mapping + ICD-10 codes
+- Canonical app workflow: `/tool`, `/tool/results`, `/tool/history`.
+- Legacy or parallel routes still exist at `/`, `/results`, and `/history`; reconcile carefully.
+- PHI scrubber is a planned core feature. Until it exists, use only fake or already de-identified data.
+- Progress is tracked in the external productivity tracker described in `AGENTS.md` and `MAY_BUILD_PLAN.md`.
 
 ## Tech Stack
 
-- **Frontend:** Next.js 14 (App Router), React, Tailwind CSS
-- **Backend:** Next.js API Routes
-- **AI:** DeepSeek API (model: deepseek-chat)
-- **Database:** Supabase (PostgreSQL)
-- **Deployment:** PM2 + Nginx on Ubuntu
+- Next.js 14 App Router
+- React
+- Tailwind CSS
+- Supabase
+- DeepSeek/OpenAI-compatible API client
+- npm
 
 ## Getting Started
 
 ```bash
-# Install dependencies
 npm install
-
-# Set up env vars
 cp .env.example .env.local
-# Edit .env.local with your keys
-
-# Run dev server
 npm run dev
+```
 
-# Build for production
+The dev server runs on:
+
+```txt
+http://localhost:3005
+```
+
+Build for production:
+
+```bash
 npm run build
 ```
 
 ## Environment Variables
 
-```
-DEEPSEEK_API_KEY=sk-your-key-here
-NEXT_PUBLIC_SUPABASE_URL=your-supabase-url
+```txt
+DEEPSEEK_API_KEY=sk-your-deepseek-api-key
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 
@@ -68,47 +53,67 @@ SAVE_GENERATED_APPEALS=false
 ALLOW_PUBLIC_APPEAL_HISTORY=false
 ```
 
-## Project Structure
+Never hardcode secrets or print `.env.local` values into logs or chat.
 
-```
+## Project Map
+
+```txt
 denial-fighter/
-├── app/
+├── app/                         Next.js App Router pages and API routes
 │   ├── api/
-│   │   ├── generate/route.js      # AI appeal generation
-│   │   └── appeals/route.js        # CRUD for stored appeals
-│   ├── results/page.js             # Appeal results view
-│   ├── history/page.js             # Past appeals list
-│   ├── layout.js                   # Root layout
-│   ├── globals.css                 # Tailwind styles
-│   └── page.js                     # Input form (main tool)
-├── lib/
-│   ├── ai.js                       # DeepSeek API client
-│   └── supabase.js                 # Supabase client
-├── components/                     # Shared components
-├── ecosystem.config.js             # PM2 config
-├── next.config.js                  # Next.js config
-├── tailwind.config.js              # Tailwind config
-└── package.json
+│   │   ├── generate/route.js     Appeal generation endpoint
+│   │   └── appeals/route.js      Appeal persistence endpoint
+│   ├── tool/                     Canonical app workflow
+│   ├── history/                  Legacy history route
+│   └── results/                  Legacy results route
+├── docs/
+│   ├── agents/                   AI-agent operating docs and handoff templates
+│   ├── adr/                      Architecture decision records
+│   ├── checklists/               Agent and QA checklists
+│   └── runbooks/                 Repeatable operating procedures
+├── lib/                          Shared app logic
+├── scripts/                      Repeatable deterministic helper scripts
+├── tests/fixtures/               Fake or de-identified test fixtures
+├── AGENTS.md                     Canonical instructions for AI agents
+├── CLAUDE.md                     Claude Code pointer to AGENTS.md
+├── GEMINI.md                     Gemini CLI pointer to AGENTS.md
+└── MAY_BUILD_PLAN.md             May roadmap and sprint plan
 ```
 
-## Pricing
+## AI Agent Workflow
 
-| Plan | Price | Appeals |
-|------|-------|---------|
-| Free | $0 | 5/month |
-| Solo | $29/mo | 50/month |
-| Clinic | $79/mo | Unlimited |
+This repo is intentionally optimized for work by multiple AI agents with human oversight.
 
-## Roadmap
+Start here:
 
-- [x] Core: paste denial → get appeal letter
-- [x] History: view past appeals
-- [x] Payer pattern tracking
-- [ ] Marketing landing page
-- [ ] Stripe payment integration
-- [ ] User auth (multi-user)
-- [ ] EHR integration (Phase 2)
-- [ ] Prior authorization support
+1. `AGENTS.md`
+2. `docs/agents/context-pack.md`
+3. `docs/architecture-data-flow.md`
+4. `docs/checklists/agent-change-checklist.md`
+
+Then read the nearest folder README before editing a major area, such as `app/README.md`, `app/api/README.md`, `app/tool/README.md`, or `lib/README.md`.
+
+Before meaningful work, update or prepare the Supabase progress tracker step. Before handoff, run the most relevant verification command and summarize changed files, tracker state, and next action.
+
+## PHI And Safety
+
+Treat denial notices and chart notes as potentially containing PHI.
+
+- Use fake or de-identified data during development.
+- Do not store raw PHI by default.
+- Do not send raw PHI to an LLM by default.
+- The first de-identifier should be deterministic code using scripts/regex, not AI.
+- Scripted de-identification reduces risk but does not guarantee HIPAA de-identification.
+- Do not claim the product is HIPAA-ready until BAAs, access controls, audit logs, retention policies, and provider requirements are in place.
+
+## Useful Docs
+
+- `MAY_BUILD_PLAN.md` - sprint plan, product direction, learning goals.
+- `docs/architecture-data-flow.md` - current route map and data flow.
+- `docs/fake-appeal-cases.md` - fake cases for development.
+- `docs/runbooks/local-development.md` - setup and smoke testing.
+- `docs/runbooks/progress-tracker.md` - tracker update procedure.
+- `docs/adr/0001-agent-managed-project-structure.md` - why the agent structure exists.
 
 ## License
 
