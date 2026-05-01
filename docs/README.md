@@ -8,7 +8,8 @@ This folder holds planning, architecture, runbooks, SQL, and agent coordination 
 
 - `architecture-data-flow.md` - current routes, API flow, AI provider flow, Supabase usage, and PHI risks.
 - `fake-appeal-cases.md` - fake examples for demos and development.
-- `001_lock_down_denial_appeals_rls.sql` - ordered Supabase SQL.
+- `001_lock_down_denial_appeals_rls.sql` - ordered Supabase SQL (lock down anon/auth direct table access).
+- `002_denial_appeals_user_id.sql` - add `user_id` for Supabase Auth ownership (run after enabling Auth).
 - `agents/` - modular agent instructions.
 - `runbooks/` - repeatable operating procedures.
 - `checklists/` - preflight and closeout checklists.

@@ -51,6 +51,13 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 # Optional production demo flags
 SAVE_GENERATED_APPEALS=false
 ALLOW_PUBLIC_APPEAL_HISTORY=false
+
+# Optional: pilot waitlist inbox for /landing mailto (public build-time value)
+# NEXT_PUBLIC_WAITLIST_EMAIL=pilot-inbox@example.com
+
+# Appeal history: production requires sign-in unless ALLOW_PUBLIC_APPEAL_HISTORY=true.
+# Dev allows anonymous history unless APPEALS_REQUIRE_LOGIN=true.
+# APPEALS_REQUIRE_LOGIN=false
 ```
 
 Never hardcode secrets or print `.env.local` values into logs or chat.

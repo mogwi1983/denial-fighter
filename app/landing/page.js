@@ -1,10 +1,13 @@
 'use client';
 
+import Link from 'next/link';
 import { useState } from 'react';
+
+const DEFAULT_CONTACT_EMAIL = 'james@clinicalaisuccess.com';
 
 const faqs = [
   { q: 'How does Denial Fighter work?', a: 'You paste your Medicare Advantage denial notice and chart notes into the app. Our AI analyzes the denial reason against CMS guidelines and payer policies, identifies evidence gaps, then generates a tailored appeal letter with specific regulations and arguments most likely to overturn the denial.' },
-  { q: 'Is my patient data secure?', a: 'Denial Fighter is in beta. Use fake or de-identified text for now; production PHI support depends on the PHI scrubber, user access controls, retention policies, and the right vendor agreements.' },
+  { q: 'Is my patient data secure?', a: 'Denial Fighter is in beta. Use fake or de-identified text unless you accept operational risk. Read the Privacy page (/privacy) for scrubbing limits, AI routing, and storage. Full production PHI support depends on access controls, BAAs, retention, and vendor agreements—not software claims alone.' },
   { q: 'What types of denials do you support?', a: 'All Medicare Advantage denial types: lack of medical necessity, not a covered benefit, experimental/investigational, out-of-network, prior authorization issues, and coding/billing errors.' },
   { q: 'Can I customize the appeal letters?', a: 'Absolutely. Every generated letter is editable before you download or print. You can adjust tone, add letterhead, and insert specific clinical details.' },
   { q: 'Do you integrate with my EHR?', a: 'Not yet — coming soon for Clinic-tier. For now, paste denial text directly or upload a screenshot.' },
@@ -62,6 +65,9 @@ function LandingPage() {
 
   const toggleFaq = (i) => setOpenFaq(openFaq === i ? null : i);
 
+  const waitEmail = process.env.NEXT_PUBLIC_WAITLIST_EMAIL || DEFAULT_CONTACT_EMAIL;
+  const waitlistHref = `mailto:${waitEmail}?subject=${encodeURIComponent('Denial Fighter pilot / waitlist')}&body=${encodeURIComponent('Role / organization only — do not include PHI:\n\n')}`;
+
   return (
     <div className={dark ? 'dark' : ''}>
       <div className="min-h-screen bg-white text-slate-900 dark:bg-slate-950 dark:text-slate-100 transition-colors duration-300">
@@ -77,9 +83,9 @@ function LandingPage() {
               <a href="#features" className="hover:text-slate-900 dark:hover:text-white">Features</a>
               <a href="#pricing" className="hover:text-slate-900 dark:hover:text-white">Pricing</a>
               <a href="#faq" className="hover:text-slate-900 dark:hover:text-white">FAQ</a>
-              <a href="/summerschool" className="flex items-center gap-1.5 text-amber-600 hover:text-amber-700 dark:text-amber-400 font-semibold">
-                <span>☀️</span> Summer School
-              </a>
+              <Link href="/privacy" className="hover:text-slate-900 dark:hover:text-white">
+                Privacy
+              </Link>
               <button
                 onClick={() => setDark(!dark)}
                 className="rounded-md p-2 hover:bg-slate-100 dark:hover:bg-slate-800"
@@ -104,12 +110,12 @@ function LandingPage() {
                   <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg>
                 )}
               </button>
-              <a
-                href="/"
+              <Link
+                href="/tool"
                 className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600"
               >
                 Launch App
-              </a>
+              </Link>
             </div>
           </nav>
         </header>
@@ -133,13 +139,13 @@ function LandingPage() {
               Medicare Advantage plans say NO without telling you why. Paste the denial + chart notes → get a citable appeal letter in 3 minutes.
             </p>
             <div className="mt-8 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
-              <a
-                href="/"
+              <Link
+                href="/tool"
                 className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-8 py-3.5 text-base font-semibold text-white shadow-lg shadow-blue-600/25 transition-all hover:bg-blue-700 hover:shadow-xl hover:shadow-blue-600/30 dark:bg-blue-500 dark:shadow-blue-500/25 dark:hover:bg-blue-600"
               >
                 Try Denial Fighter Free
                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" /></svg>
-              </a>
+              </Link>
               <a
                 href="#how-it-works"
                 className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-8 py-3.5 text-base font-medium text-slate-700 shadow-sm transition-all hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
@@ -224,7 +230,7 @@ function LandingPage() {
                     ))}
                   </ul>
                   <a
-                    href={plan.cta === 'Contact Sales' ? 'mailto:james@clinicalaisuccess.com' : '/'}
+                    href={plan.cta === 'Contact Sales' ? `mailto:${DEFAULT_CONTACT_EMAIL}` : '/tool'}
                     className={`mt-6 flex w-full items-center justify-center rounded-lg px-4 py-2.5 text-sm font-semibold shadow-sm transition-all ${plan.featured ? 'bg-blue-600 text-white hover:bg-blue-700' : 'border border-slate-300 text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-700'}`}
                   >
                     {plan.cta}
@@ -232,6 +238,27 @@ function LandingPage() {
                 </div>
               ))}
             </div>
+          </div>
+        </section>
+
+        {/* Pilot / waitlist */}
+        <section id="waitlist" className="border-t border-slate-100 bg-white px-4 py-16 dark:border-slate-800 dark:bg-slate-950 sm:px-6">
+          <div className="mx-auto max-w-2xl text-center">
+            <h2 className="text-2xl font-bold">Pilot & waitlist</h2>
+            <p className="mt-3 text-sm leading-relaxed text-slate-600 dark:text-slate-400">
+              We&apos;re onboarding a small cohort of clinicians and operators for structured feedback. Request a spot by email—include your role and organization only.{' '}
+              <strong className="font-semibold text-slate-800 dark:text-slate-200">Do not send PHI.</strong>
+            </p>
+            <a
+              href={waitlistHref}
+              className="mt-6 inline-flex items-center justify-center rounded-xl bg-teal-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-teal-700 dark:bg-teal-500 dark:hover:bg-teal-600"
+            >
+              Email the waitlist
+            </a>
+            <p className="mt-4 text-xs text-slate-500 dark:text-slate-500">
+              Reads from <code className="rounded bg-slate-100 px-1 py-0.5 dark:bg-slate-800">NEXT_PUBLIC_WAITLIST_EMAIL</code> when set;
+              otherwise messages go to the default contact inbox.
+            </p>
           </div>
         </section>
 
@@ -265,9 +292,19 @@ function LandingPage() {
         <footer className="border-t border-slate-200 px-4 py-8 dark:border-slate-800">
           <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 text-sm text-slate-500 dark:text-slate-400 sm:flex-row">
             <span>&copy; {new Date().getFullYear()} Denial Fighter. Built by Clinical AI Success.</span>
-            <div className="flex gap-6">
-              <a href="mailto:james@clinicalaisuccess.com" className="hover:text-slate-700 dark:hover:text-slate-300">Contact</a>
-              <a href="https://clinicalaisuccess.com" className="hover:text-slate-700 dark:hover:text-slate-300">Clinical AI Success</a>
+            <div className="flex flex-wrap justify-center gap-6 sm:justify-end">
+              <Link href="/privacy" className="hover:text-slate-700 dark:hover:text-slate-300">
+                Privacy
+              </Link>
+              <Link href="/tool" className="hover:text-slate-700 dark:hover:text-slate-300">
+                Tool
+              </Link>
+              <a href={`mailto:${DEFAULT_CONTACT_EMAIL}`} className="hover:text-slate-700 dark:hover:text-slate-300">
+                Contact
+              </a>
+              <a href="https://clinicalaisuccess.com" className="hover:text-slate-700 dark:hover:text-slate-300">
+                Clinical AI Success
+              </a>
             </div>
           </div>
         </footer>

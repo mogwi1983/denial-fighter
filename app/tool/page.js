@@ -1,8 +1,10 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { sampleAppealCases } from '@/lib/sampleAppealCases';
+import { fetchWithAuth } from '@/lib/apiFetch';
+import { SCRUB_LABEL, scrubAppealInputs } from '@/lib/scrubPhiDeterministic';
 
 const maxInputCharacters = 20000;
 
@@ -17,11 +19,48 @@ export default function NewAppeal() {
   const [error, setError] = useState('');
   const [fieldErrors, setFieldErrors] = useState({});
   const [dragActive, setDragActive] = useState(false);
+  const [scrubConfirmed, setScrubConfirmed] = useState(false);
 
   const inputCharacterCount = useMemo(
     () => denialText.length + chartNotes.length,
     [denialText, chartNotes]
   );
+
+  const scrubPreview = useMemo(
+    () =>
+      scrubAppealInputs({
+        denialText,
+        chartNotes,
+        patientDiagnosis: diagnosis,
+        payerName,
+      }),
+    [denialText, chartNotes, diagnosis, payerName]
+  );
+
+  const scrubCategoryEntries = useMemo(() => {
+    const counts = scrubPreview.stats?.byCategory || {};
+    return Object.entries(counts).filter(([, n]) => n > 0);
+  }, [scrubPreview.stats]);
+
+  const scrubFingerprint = useMemo(
+    () =>
+      [
+        scrubPreview.denialText,
+        scrubPreview.chartNotes,
+        scrubPreview.patientDiagnosis,
+        scrubPreview.payerName,
+      ].join('\x1e'),
+    [
+      scrubPreview.denialText,
+      scrubPreview.chartNotes,
+      scrubPreview.patientDiagnosis,
+      scrubPreview.payerName,
+    ]
+  );
+
+  useEffect(() => {
+    setScrubConfirmed(false);
+  }, [scrubFingerprint]);
 
   const loadSampleCase = (sampleCase) => {
     setActiveTab('text');
@@ -52,6 +91,16 @@ export default function NewAppeal() {
       nextErrors.inputLength = `Keep denial text and chart notes under ${maxInputCharacters.toLocaleString()} characters for this MVP endpoint.`;
     }
 
+    if (
+      activeTab === 'text' &&
+      denialText.trim() &&
+      chartNotes.trim() &&
+      inputCharacterCount <= maxInputCharacters &&
+      !scrubConfirmed
+    ) {
+      nextErrors.scrubConfirm = 'Confirm the scrubbed preview before generating.';
+    }
+
     setFieldErrors(nextErrors);
     return nextErrors;
   };
@@ -69,7 +118,7 @@ export default function NewAppeal() {
     setError('');
 
     try {
-      const response = await fetch('/api/generate', {
+      const response = await fetchWithAuth('/api/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -123,7 +172,7 @@ export default function NewAppeal() {
         <p className="text-xs font-bold uppercase tracking-widest text-blue-700">Generator cleanup sprint</p>
         <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-950">New Appeal Request</h1>
         <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
-          Use fake or de-identified denial text and chart notes. The PHI scrubber is not active yet.
+          Use fake or de-identified denial text and chart notes. A deterministic scrub runs on the server before anything is sent to the model or saved; the preview below matches that behavior.
         </p>
       </div>
 
@@ -257,6 +306,63 @@ export default function NewAppeal() {
                     </p>
                     {fieldErrors.inputLength && <p className="text-sm font-medium text-red-600">{fieldErrors.inputLength}</p>}
                   </div>
+
+                  <section className="rounded-lg border border-teal-200 bg-teal-50/60 p-5 shadow-sm">
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div>
+                        <h3 className="font-bold text-slate-950">Scrubbed preview (sent to the model)</h3>
+                        <p className="mt-1 text-sm leading-6 text-slate-600">{SCRUB_LABEL}</p>
+                      </div>
+                      <div className="rounded-full bg-white px-3 py-1 text-xs font-bold text-teal-800 shadow-sm ring-1 ring-teal-100">
+                        {scrubPreview.stats.totalReplacements} placeholder
+                        {scrubPreview.stats.totalReplacements === 1 ? '' : 's'}
+                      </div>
+                    </div>
+                    {scrubCategoryEntries.length > 0 && (
+                      <ul className="mt-3 flex flex-wrap gap-2">
+                        {scrubCategoryEntries.map(([key, count]) => (
+                          <li
+                            key={key}
+                            className="rounded-md bg-white px-2.5 py-1 text-xs font-semibold text-slate-700 shadow-sm ring-1 ring-slate-200"
+                          >
+                            {key}: {count}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                    <div className="mt-4 grid gap-4 md:grid-cols-2">
+                      <div>
+                        <p className="mb-1.5 text-xs font-bold uppercase tracking-widest text-slate-500">Denial (scrubbed)</p>
+                        <div className="max-h-40 overflow-y-auto whitespace-pre-wrap rounded-lg border border-teal-100 bg-white p-3 text-xs leading-relaxed text-slate-800">
+                          {scrubPreview.denialText || <span className="text-slate-400">Empty until you paste denial text.</span>}
+                        </div>
+                      </div>
+                      <div>
+                        <p className="mb-1.5 text-xs font-bold uppercase tracking-widest text-slate-500">Chart notes (scrubbed)</p>
+                        <div className="max-h-40 overflow-y-auto whitespace-pre-wrap rounded-lg border border-teal-100 bg-white p-3 text-xs leading-relaxed text-slate-800">
+                          {scrubPreview.chartNotes || <span className="text-slate-400">Empty until you paste chart notes.</span>}
+                        </div>
+                      </div>
+                    </div>
+
+                    <label className="mt-4 flex cursor-pointer items-start gap-3 rounded-lg border border-teal-200 bg-white p-4 shadow-sm">
+                      <input
+                        type="checkbox"
+                        checked={scrubConfirmed}
+                        onChange={(event) => {
+                          setScrubConfirmed(event.target.checked);
+                          setFieldErrors((current) => ({ ...current, scrubConfirm: undefined }));
+                        }}
+                        className="mt-1 h-4 w-4 shrink-0 rounded border-slate-300 text-teal-600 focus:ring-teal-500"
+                      />
+                      <span className="text-sm leading-relaxed text-slate-800">
+                        <span className="font-semibold text-slate-950">Confirm scrubbed text.</span> I reviewed the preview above and accept sending this scrubbed denial notice, chart notes, and clinical context fields to the model. Saved appeals will store this scrubbed content only.
+                      </span>
+                    </label>
+                    {fieldErrors.scrubConfirm && (
+                      <p className="mt-2 text-sm font-medium text-red-600">{fieldErrors.scrubConfirm}</p>
+                    )}
+                  </section>
                 </div>
               )}
             </div>
@@ -272,7 +378,7 @@ export default function NewAppeal() {
               <div>
                 <h3 className="font-bold text-slate-950">Generator contract</h3>
                 <p className="mt-1 text-sm leading-6 text-slate-600">
-                  The API now expects denial text and chart notes, then returns payer, denial reason, evidence needed, evidence covered, evidence gaps, and the draft appeal in one predictable JSON shape.
+                  The API validates your paste, applies the same deterministic scrub shown above, calls the model with scrubbed text only, then returns payer, denial reason, evidence fields, and the draft appeal in one JSON shape. Saved rows store scrubbed denial and chart text only.
                 </p>
               </div>
             </div>
@@ -313,7 +419,7 @@ export default function NewAppeal() {
           <section className="rounded-lg bg-blue-700 p-5 text-white shadow-sm sm:p-6">
             <h3 className="text-lg font-bold">Ready to generate?</h3>
             <p className="mt-2 text-sm leading-6 text-blue-100">
-              The draft still needs clinical review before use.
+              The draft still needs clinical review before use. Confirm the scrubbed preview on the left when Paste Text is active.
             </p>
 
             {error && (
@@ -324,9 +430,21 @@ export default function NewAppeal() {
 
             <button
               type="submit"
-              disabled={loading}
+              disabled={
+                loading ||
+                (activeTab === 'text' &&
+                  Boolean(denialText.trim() && chartNotes.trim()) &&
+                  inputCharacterCount <= maxInputCharacters &&
+                  !scrubConfirmed)
+              }
               className={`mt-5 flex w-full items-center justify-center gap-2 rounded-lg px-4 py-3 text-base font-bold transition ${
-                loading ? 'cursor-not-allowed bg-blue-800 text-blue-100' : 'bg-white text-blue-700 hover:bg-blue-50'
+                loading ||
+                (activeTab === 'text' &&
+                  Boolean(denialText.trim() && chartNotes.trim()) &&
+                  inputCharacterCount <= maxInputCharacters &&
+                  !scrubConfirmed)
+                  ? 'cursor-not-allowed bg-blue-800 text-blue-100'
+                  : 'bg-white text-blue-700 hover:bg-blue-50'
               }`}
             >
               {loading ? (
@@ -346,7 +464,7 @@ export default function NewAppeal() {
           <section className="rounded-lg border border-amber-200 bg-amber-50 p-4">
             <h4 className="text-xs font-bold uppercase tracking-widest text-amber-800">Beta privacy note</h4>
             <p className="mt-2 text-sm leading-6 text-amber-900">
-              Use fake or de-identified text only. Scripted PHI detection will reduce risk later, but it will not guarantee HIPAA de-identification.
+              Use fake or de-identified text only. Scripted scrubbing reduces common identifier leaks but can miss context-specific PHI and does not guarantee HIPAA de-identification.
             </p>
           </section>
         </aside>

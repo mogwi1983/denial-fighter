@@ -1,6 +1,6 @@
 # App Directory
 
-Last reviewed: 2026-04-30
+Last reviewed: 2026-05-01
 
 This folder uses the Next.js App Router. Files named `page.js` define routes. Files named `layout.js` define route shells.
 
@@ -15,10 +15,12 @@ Canonical product workflow:
 Other routes:
 
 - `/` - root app surface; currently overlaps with the appeal tool.
-- `/landing` - marketing/pricing surface.
+- `/landing` - marketing/pricing surface (links to `/tool`, `#waitlist`, `/privacy`).
+- `/privacy` - beta privacy and data-handling copy (scrub limits, AI, storage).
+- `/tool/login` - Supabase magic-link sign-in.
+- `/auth/callback` - OAuth/magic-link session exchange.
 - `/history` - legacy history route.
 - `/results` - legacy results route.
-- `/summerschool` - separate summer-school route added outside the core appeal workflow.
 
 ## Agent Notes
 

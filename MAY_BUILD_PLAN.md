@@ -26,6 +26,38 @@ The product should move toward monetization, but May's deeper goal is learning q
 - The app has a landing/pricing/waitlist or payment path.
 - At least 5 potential users have seen or discussed the MVP.
 
+## Execution status (living snapshot)
+
+Last updated: 2026-05-01.
+
+This section summarizes what the **Denial Fighter repo** reflects today. The **Supabase productivity tracker** (`project_id` below) remains canonical for checklist completion, progress percentage, and `next_action`; update steps there and run sync after meaningful work per `docs/runbooks/progress-tracker.md`.
+
+### Active focus
+
+**Week 2 — PHI scrubber and appeal history** (`in_progress`): extend scrub coverage (tune false positives/negatives), deepen history UX (status edits, exports). **Shipped:** `/privacy` page + in-app links; expanded scrub patterns (fax, group ID, auth ref, labeled NPI).
+
+### Done vs open (high level)
+
+| Area | Status | Notes |
+| --- | --- | --- |
+| Sprint 0: foundation | **Mostly complete** | App runs locally with env (`DEEPSEEK_*`, Supabase); canonical workflow under `/tool`; architecture/data flow documented in `docs/architecture-data-flow.md`; fake samples in `lib/sampleAppealCases.js`. **Still verify** productivity tracker row + milestone/step seeding if not already done in Supabase. |
+| Week 1: core generator | **Substantially complete** | `/tool` sections + validation + loading/errors; `/api/generate` consistent JSON + validation; `lib/ai.js` structured JSON output; `/tool/results` shows payer, denial reason, evidence fields, gaps, letter + copy/download; sample-load buttons; beta / de-ID warnings on form. Remaining Week 1 polish (optional): appeal quality checklist; richer API error mapping for provider failures. |
+| Week 2: scrubber + history | **Substantially complete** | Core scrub + history UX shipped; production history access now ties to **Week 3** auth (`APPEALS_REQUIRE_LOGIN` / `ALLOW_PUBLIC_APPEAL_HISTORY`). **Open:** scrub tuning, richer detail actions/exports. |
+| Week 3–4 | **In progress (starter)** | **Shipped:** magic-link sign-in (`/tool/login`, `/auth/callback`), Bearer JWT verification on `/api/generate` + `/api/appeals`, optional `user_id` persistence (`docs/002_denial_appeals_user_id.sql`), user-scoped history in production. **Open:** Stripe/pricing wiring, usage quotas, tighter RLS if clients query Postgres directly. |
+
+### Success criteria checklist (May targets)
+
+| Criterion | Repo today |
+| --- | --- |
+| App runs locally / deployable | Local: yes. Deploy: not finalized (Week 4). |
+| Enter denial + chart notes | Yes (`/tool`). |
+| De-ID before AI | **Partial** — deterministic scrub before LLM and storage (`lib/scrubPhiDeterministic.js`); not full Safe Harbor coverage. |
+| Structured appeal result | Yes. |
+| Save + display appeal history | Partially: save path exists; list view shows errors reliably; row/detail UX still Week 2 scope. |
+| Privacy / security story | **Stronger MVP:** dedicated `/privacy` plus scrub-limit narrative in-app; still not HIPAA positioning. |
+| Landing / pricing / waitlist | **Starter:** pricing UI + pilot mailto waitlist + canonical `/tool` CTAs; no Stripe yet (Week 3). |
+| 5 potential-user conversations | Tracking outside repo. |
+
 ## Progress Tracking In Supabase
 
 The productivity tracker should be the single source of truth for project progress. This Markdown file defines the plan, but the Supabase tracker should hold the live execution state.
@@ -89,13 +121,13 @@ Allowed `status` values:
 
 Suggested milestones:
 
-| Sort | Title | Due Date | Outcome |
-| --- | --- | --- | --- |
-| 10 | Sprint 0: Foundation And Orientation | 2026-05-03 | App runs locally, current architecture is understood, and fake test data exists. |
-| 20 | Week 1: Core Appeal Generator | 2026-05-10 | Reliable appeal-generation flow with structured output and copy action. |
-| 30 | Week 2: PHI Scrubber And Appeal History | 2026-05-17 | Script-based de-identifier, review flow, saved appeals, and usable history. |
-| 40 | Week 3: Auth, Accounts, And Monetization Path | 2026-05-24 | Account-aware app with protected appeal history and a pricing or waitlist path. |
-| 50 | Week 4: Pilot-Ready MVP | 2026-05-31 | Deployed MVP with privacy page, export flow, demo script, and outreach list. |
+| Sort | Title | Due Date | Outcome | Status (repo snapshot 2026-05-01) |
+| --- | --- | --- | --- | --- |
+| 10 | Sprint 0: Foundation And Orientation | 2026-05-03 | App runs locally, current architecture is understood, and fake test data exists. | Mostly complete — confirm tracker seeding in productivity Supabase if needed. |
+| 20 | Week 1: Core Appeal Generator | 2026-05-10 | Reliable appeal-generation flow with structured output and copy action. | Substantially complete — optional polish remains. |
+| 30 | Week 2: PHI Scrubber And Appeal History | 2026-05-17 | Script-based de-identifier, review flow, saved appeals, and usable history. | **In progress** — scrubber + preview + scrubbed persistence shipped; remaining Week 2 items in execution notes above. |
+| 40 | Week 3: Auth, Accounts, And Monetization Path | 2026-05-24 | Account-aware app with protected appeal history and a pricing or waitlist path. | Not started. |
+| 50 | Week 4: Pilot-Ready MVP | 2026-05-31 | Deployed MVP with privacy page, export flow, demo script, and outreach list. | Not started. |
 
 `public.project_steps` tracks checklist items that feed progress percentage.
 

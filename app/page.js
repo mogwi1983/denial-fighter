@@ -98,10 +98,6 @@ export default function Home() {
             </svg>
             History
           </button>
-          <button onClick={() => router.push('/summerschool')} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-600 hover:bg-amber-50 hover:text-amber-700">
-            <span className="text-lg leading-none">☀️</span>
-            Summer School
-          </button>
         </nav>
 
         <div className="p-4 mt-auto border-t border-slate-100">

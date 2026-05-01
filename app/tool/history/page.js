@@ -2,24 +2,37 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { fetchWithAuth } from '@/lib/apiFetch';
 
 export default function History() {
+  const router = useRouter();
   const [appeals, setAppeals] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
 
   useEffect(() => {
-    fetch('/api/appeals')
-      .then(r => r.json())
-      .then(data => {
-        if (data.success) setAppeals(data.appeals);
+    fetchWithAuth('/api/appeals')
+      .then(async (r) => {
+        const data = await r.json().catch(() => ({}));
+        if (r.status === 401) {
+          setLoadError(
+            data.error || 'Sign in to view saved appeals, or enable demo history access for this deployment.'
+          );
+          setAppeals([]);
+          return;
+        }
+        if (!r.ok || data.success === false) {
+          setLoadError(data.error || `Could not load history (${r.status}).`);
+          setAppeals([]);
+          return;
+        }
+        setLoadError('');
+        setAppeals(Array.isArray(data.appeals) ? data.appeals : []);
       })
       .catch(() => {
-          // Mock data for demo if API fails or no database
-          setAppeals([
-              { id: 1, payer_name: 'UnitedHealthcare', status: 'won', created_at: new Date().toISOString(), patient_diagnosis: 'Lumbar Radiculopathy', denial_reason: 'Lack of medical necessity for requested MRI' },
-              { id: 2, payer_name: 'Aetna', status: 'appeal_generated', created_at: new Date(Date.now() - 86400000).toISOString(), patient_diagnosis: 'Type 2 Diabetes', denial_reason: 'Experimental treatment' },
-              { id: 3, payer_name: 'Humana', status: 'denied', created_at: new Date(Date.now() - 172800000).toISOString(), patient_diagnosis: 'Sleep Apnea', denial_reason: 'Out of network provider' },
-          ]);
+        setLoadError('Could not load appeal history. Check your connection and try again.');
+        setAppeals([]);
       })
       .finally(() => setLoading(false));
   }, []);
@@ -51,6 +64,15 @@ export default function History() {
         </Link>
       </div>
 
+      {loadError && (
+        <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-900">
+          <p>{loadError}</p>
+          <Link href="/tool/login" className="mt-2 inline-block font-semibold text-blue-800 underline hover:text-blue-950">
+            Go to sign in
+          </Link>
+        </div>
+      )}
+
       <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
         {loading ? (
           <div className="p-12 text-center text-slate-500">
@@ -80,11 +102,24 @@ export default function History() {
                 <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-widest">Payer / Diagnosis</th>
                 <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-widest">Status</th>
                 <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-widest text-right">Date</th>
+                <th className="w-24 px-6 py-4 text-right text-xs font-bold uppercase tracking-widest text-slate-400">View</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {appeals.map((appeal) => (
-                <tr key={appeal.id} className="hover:bg-slate-50/50 transition-colors cursor-pointer group">
+                <tr
+                  key={appeal.id}
+                  role="link"
+                  tabIndex={0}
+                  onClick={() => router.push(`/tool/history/${appeal.id}`)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault();
+                      router.push(`/tool/history/${appeal.id}`);
+                    }
+                  }}
+                  className="cursor-pointer transition-colors hover:bg-slate-50/50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 group"
+                >
                   <td className="px-6 py-4">
                     <div className="font-bold text-slate-900 group-hover:text-blue-600 transition-colors">{appeal.payer_name || 'N/A'}</div>
                     <div className="text-sm text-slate-500 mt-0.5">{appeal.patient_diagnosis || 'No diagnosis provided'}</div>
@@ -97,6 +132,9 @@ export default function History() {
                   <td className="px-6 py-4 text-right">
                     <div className="text-sm font-medium text-slate-900">{new Date(appeal.created_at).toLocaleDateString()}</div>
                     <div className="text-xs text-slate-400 mt-0.5">{new Date(appeal.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+                  </td>
+                  <td className="px-6 py-4 text-right">
+                    <span className="text-sm font-semibold text-blue-600 group-hover:text-blue-800">Open →</span>
                   </td>
                 </tr>
               ))}

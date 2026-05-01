@@ -1,5 +1,7 @@
 import { analyzeWithChartNotes } from '@/lib/ai';
 import { supabase } from '@/lib/supabase';
+import { scrubAppealInputs, scrubClinicalText } from '@/lib/scrubPhiDeterministic';
+import { getAuthUserFromRequest } from '@/lib/serverSupabaseAuth';
 import { NextResponse } from 'next/server';
 
 const isProduction = process.env.NODE_ENV === 'production';
@@ -37,7 +39,8 @@ function normalizeList(value) {
 
 export async function POST(request) {
   const startTime = Date.now();
-  
+  const { user } = await getAuthUserFromRequest(request);
+
   try {
     let payload;
 
@@ -70,34 +73,52 @@ export async function POST(request) {
       return errorResponse(`Input is too long for this MVP endpoint. Keep combined text under ${maxInputCharacters} characters.`, 413);
     }
 
-    const result = await analyzeWithChartNotes(denialText, chartNotes, {
+    const scrubbed = scrubAppealInputs({
+      denialText,
+      chartNotes,
       patientDiagnosis,
       payerName,
+    });
+
+    const patientAgeForDb = scrubClinicalText(patientAge).text.trim();
+
+    if (!scrubbed.denialText || !scrubbed.chartNotes) {
+      return errorResponse(
+        'After scrubbing, denial text and chart notes must still contain clinical content. Add more detail or reduce placeholder-only input.',
+        400,
+      );
+    }
+
+    const result = await analyzeWithChartNotes(scrubbed.denialText, scrubbed.chartNotes, {
+      patientDiagnosis: scrubbed.patientDiagnosis,
+      payerName: scrubbed.payerName,
     });
 
     let data = null;
 
     if (persistAppeals) {
-      const savedAppeal = await supabase
-        .from('denial_appeals')
-        .insert({
-          denial_text: denialText,
-          payer_name: result.payer || payerName,
-          denial_reason: result.denialReason,
-          chart_notes: chartNotes,
-          patient_diagnosis: patientDiagnosis,
-          patient_age: patientAge,
-          appeal_letter: result.appealLetter,
-          evidence_gaps: normalizeList(result.evidenceGaps),
-          payer_specific_tips: Array.isArray(result.evidenceNeeded)
-            ? result.evidenceNeeded.join('\n')
-            : result.evidenceNeeded,
-          processing_time_seconds: Math.floor((Date.now() - startTime) / 1000),
-          model_used: result.model || 'deepseek-chat',
-          status: 'appeal_generated',
-        })
-        .select()
-        .single();
+      const insertRow = {
+        denial_text: scrubbed.denialText,
+        payer_name: result.payer || scrubbed.payerName,
+        denial_reason: result.denialReason,
+        chart_notes: scrubbed.chartNotes,
+        patient_diagnosis: scrubbed.patientDiagnosis,
+        patient_age: patientAgeForDb,
+        appeal_letter: result.appealLetter,
+        evidence_gaps: normalizeList(result.evidenceGaps),
+        payer_specific_tips: Array.isArray(result.evidenceNeeded)
+          ? result.evidenceNeeded.join('\n')
+          : result.evidenceNeeded,
+        processing_time_seconds: Math.floor((Date.now() - startTime) / 1000),
+        model_used: result.model || 'deepseek-chat',
+        status: 'appeal_generated',
+      };
+
+      if (user?.id) {
+        insertRow.user_id = user.id;
+      }
+
+      const savedAppeal = await supabase.from('denial_appeals').insert(insertRow).select().single();
 
       data = savedAppeal.data;
 
@@ -110,7 +131,7 @@ export async function POST(request) {
       success: true,
       appeal: result.appealLetter,
       analysis: {
-        payer: result.payer || payerName || 'Unknown payer',
+        payer: result.payer || scrubbed.payerName || 'Unknown payer',
         denialReason: result.denialReason || 'Not specified',
         evidenceNeeded: result.evidenceNeeded || [],
         evidenceCovered: result.evidenceCovered || [],
@@ -119,6 +140,11 @@ export async function POST(request) {
       id: data?.id || null,
       saved: Boolean(data?.id),
       processingTime: Math.floor((Date.now() - startTime) / 1000),
+      scrubSummary: {
+        totalReplacements: scrubbed.stats.totalReplacements,
+        byCategory: scrubbed.stats.byCategory,
+      },
+      generatedFromScrubbedInput: true,
     });
 
   } catch (error) {

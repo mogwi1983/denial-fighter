@@ -28,7 +28,7 @@ export default function Results() {
 
   if (!data) return null;
 
-  const { appeal, analysis, id, processingTime } = data;
+  const { appeal, analysis, id, processingTime, scrubSummary } = data;
 
   const copyToClipboard = async () => {
     try {
@@ -121,6 +121,15 @@ export default function Results() {
       {copyError && (
         <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-900">
           {copyError}
+        </div>
+      )}
+
+      {scrubSummary && typeof scrubSummary.totalReplacements === 'number' && (
+        <div className="mb-6 rounded-lg border border-teal-200 bg-teal-50 px-4 py-3 text-sm leading-relaxed text-teal-950">
+          <span className="font-semibold">Deterministic scrub applied.</span>{' '}
+          {scrubSummary.totalReplacements === 0
+            ? 'No common identifier patterns were replaced in this request.'
+            : `${scrubSummary.totalReplacements} scripted placeholder${scrubSummary.totalReplacements === 1 ? '' : 's'} applied before generation and storage.`}
         </div>
       )}
 

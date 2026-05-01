@@ -2,11 +2,42 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useEffect, useMemo, useState } from 'react';
+import { getSupabaseBrowserClient } from '@/lib/supabaseBrowser';
+
+function sidebarTitle(pathname, navItems) {
+  const hit = navItems.find((item) => pathname === item.href);
+  if (hit) return hit.name;
+  if (pathname?.startsWith('/tool/history/')) return 'History';
+  return 'App';
+}
 
 export default function ToolLayout({ children }) {
   const pathname = usePathname();
+  const [authUser, setAuthUser] = useState(null);
 
-  const navItems = [
+  useEffect(() => {
+    try {
+      const supabase = getSupabaseBrowserClient();
+
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        setAuthUser(session?.user ?? null);
+      });
+
+      const {
+        data: { subscription },
+      } = supabase.auth.onAuthStateChange((_event, session) => {
+        setAuthUser(session?.user ?? null);
+      });
+
+      return () => subscription.unsubscribe();
+    } catch {
+      setAuthUser(null);
+    }
+  }, []);
+
+  const navItems = useMemo(() => {
+    const base = [
     { name: 'New Appeal', href: '/tool', icon: (
       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -22,7 +53,36 @@ export default function ToolLayout({ children }) {
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
       </svg>
     ) },
-  ];
+    { name: 'Privacy', href: '/privacy', icon: (
+      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+      </svg>
+    ) },
+    ];
+
+    if (!authUser) {
+      base.push({
+        name: 'Sign in',
+        href: '/tool/login',
+        icon: (
+          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4M10 17l5-5-5-5M13.8 12H3" />
+          </svg>
+        ),
+      });
+    }
+
+    return base;
+  }, [authUser]);
+
+  const signOut = async () => {
+    try {
+      const supabase = getSupabaseBrowserClient();
+      await supabase.auth.signOut();
+    } catch {
+      /* ignore */
+    }
+  };
 
   return (
     <div className="flex min-h-screen bg-[#F8FAFC]">
@@ -59,18 +119,32 @@ export default function ToolLayout({ children }) {
           })}
         </nav>
 
-        <div className="p-4 mt-auto border-t border-slate-100">
-          <div className="bg-slate-50 rounded-xl p-4">
-            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Clinic Tier</p>
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-xs">
-                JD
+        <div className="mt-auto border-t border-slate-100 p-4">
+          <div className="rounded-xl bg-slate-50 p-4">
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-400">Session</p>
+            {authUser ? (
+              <div className="space-y-2">
+                <p className="truncate text-sm font-medium text-slate-900" title={authUser.email || ''}>
+                  {authUser.email}
+                </p>
+                <button
+                  type="button"
+                  onClick={signOut}
+                  className="text-xs font-semibold text-blue-700 hover:text-blue-900 hover:underline"
+                >
+                  Sign out
+                </button>
               </div>
-              <div className="overflow-hidden">
-                <p className="text-sm font-medium text-slate-900 truncate">Dr. Jane Doe</p>
-                <p className="text-xs text-slate-500 truncate">St. Mary&apos;s Hospital</p>
+            ) : (
+              <div className="space-y-2">
+                <Link href="/tool/login" className="text-sm font-semibold text-blue-700 hover:underline">
+                  Sign in for saved history
+                </Link>
+                <p className="text-xs leading-relaxed text-slate-500">
+                  Production requires sign-in for history unless demo mode is enabled.
+                </p>
               </div>
-            </div>
+            )}
           </div>
         </div>
       </aside>
@@ -79,8 +153,8 @@ export default function ToolLayout({ children }) {
       <div className="flex-1 flex flex-col">
         {/* Top Header */}
         <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-8 sticky top-0 z-10">
-          <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-widest">
-            {navItems.find(item => item.href === pathname)?.name || 'App'}
+          <h2 className="text-sm font-semibold uppercase tracking-widest text-slate-500">
+            {sidebarTitle(pathname, navItems)}
           </h2>
           <div className="flex items-center gap-4">
             <button className="p-2 text-slate-400 hover:text-slate-600">

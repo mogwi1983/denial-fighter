@@ -1,6 +1,6 @@
 # Progress Tracker Runbook
 
-Last reviewed: 2026-04-30
+Last reviewed: 2026-05-01
 
 The productivity tracker is the live source of truth for Denial Fighter progress.
 
@@ -50,3 +50,16 @@ Use only fields that exist in the tracker schema:
 - `completed_at`
 
 Do not assume a `notes` column exists on `project_steps`.
+
+## Denial Fighter — mirror after milestone work (manual)
+
+Use parent project id `e3ead243-c8d0-4cf3-95f5-baeaedca10e8`. After shipping scrubber work (2026-05-01 snapshot):
+
+1. Ensure milestone **Week 2: PHI Scrubber And Appeal History** is `in_progress` (Week 1 can remain `completed` or `substantially complete` per your convention).
+2. Mark completed `project_steps` that match shipped work, for example:
+   - Deterministic PHI scrubber module in repo (`scrubPhiDeterministic.js`).
+   - Scrub preview on canonical `/tool` workflow.
+   - `/api/generate` sends scrubbed text to the LLM and persists scrubbed denial/chart fields.
+   - `/tool/history` shows real errors instead of mock rows on failure.
+3. Set or refresh `projects.next_action` to the next Week 2 gap (e.g. optional confirm-before-send, expanded scrub patterns, history detail view).
+4. Run `GET /api/projects/sync-progress` on the **productivity** app when that endpoint is available.
